@@ -1,0 +1,14 @@
+{
+  "name": "claude-peek-marketplace",
+  "description": "Local marketplace for Claude Peek",
+  "owner": {
+    "name": "akurkin"
+  },
+  "plugins": [
+    {
+      "name": "claude-peek",
+      "description": "Claude Peek channel — send and receive messages via the notch UI",
+      "source": "./"
+    }
+  ]
+}

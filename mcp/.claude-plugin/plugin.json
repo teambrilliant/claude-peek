@@ -1,0 +1,5 @@
+{
+  "name": "claude-peek",
+  "description": "Claude Peek channel — send and receive messages via the notch UI",
+  "version": "0.1.0"
+}
