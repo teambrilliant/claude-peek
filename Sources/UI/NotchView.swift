@@ -344,6 +344,21 @@ private struct SessionRow: View {
 
             Spacer(minLength: 0)
 
+            if isHovered, let pid = session.pid {
+                Button {
+                    TerminalFocuser.focusTerminal(claudePid: pid)
+                } label: {
+                    Image(systemName: "terminal")
+                        .font(.system(size: 10))
+                        .foregroundColor(.white.opacity(0.4))
+                        .frame(width: 22, height: 22)
+                        .background(Color.white.opacity(0.08))
+                        .clipShape(RoundedRectangle(cornerRadius: 5))
+                }
+                .buttonStyle(.plain)
+                .transition(.opacity)
+            }
+
             if session.phase.isWaitingForApproval {
                 approvalButtons
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
