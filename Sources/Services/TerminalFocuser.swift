@@ -15,26 +15,18 @@ enum TerminalFocuser {
     ]
 
     /// Focus the terminal window running a Claude session
-    /// Uses project directory to match the correct window when multiple exist
     static func focusTerminal(claudePid: Int, cwd: String) {
-        guard let terminalPid = findTerminalPid(childPid: claudePid) else {
-            logger.debug("No terminal app found for PID \(claudePid)")
-            return
-        }
+        guard let terminalPid = findTerminalPid(childPid: claudePid) else { return }
 
         let apps = NSWorkspace.shared.runningApplications
-        guard let app = apps.first(where: { $0.processIdentifier == terminalPid }) else {
-            logger.debug("No running app for terminal PID \(terminalPid)")
-            return
-        }
+        guard let app = apps.first(where: { $0.processIdentifier == terminalPid }) else { return }
 
-        // Try to raise the specific window matching the project directory
+        // With accessibility permission, raise the specific window matching the project
         if AXIsProcessTrusted() {
             raiseMatchingWindow(pid: terminalPid, cwd: cwd)
         }
 
         app.activate()
-        logger.info("Focused \(app.localizedName ?? "terminal", privacy: .public) for Claude PID \(claudePid)")
     }
 
     /// Prompt for accessibility permission if not granted
@@ -47,7 +39,6 @@ enum TerminalFocuser {
 
     // MARK: - Window Matching
 
-    /// Find the window whose title contains the project directory name and raise it
     private static func raiseMatchingWindow(pid: pid_t, cwd: String) {
         let appRef = AXUIElementCreateApplication(pid)
 
@@ -56,7 +47,6 @@ enum TerminalFocuser {
             let windows = windowsRef as? [AXUIElement]
         else { return }
 
-        // Match by project directory name in window title
         let projectName = URL(fileURLWithPath: cwd).lastPathComponent
 
         for window in windows {
@@ -66,21 +56,17 @@ enum TerminalFocuser {
             else { continue }
 
             if title.contains(projectName) {
-                focusWindow(window, appRef: appRef)
-                logger.debug("Raised window: \(title, privacy: .public)")
+                focusWindow(window)
                 return
             }
         }
 
-        // No match — just raise the first window
         if let firstWindow = windows.first {
-            focusWindow(firstWindow, appRef: appRef)
+            focusWindow(firstWindow)
         }
     }
 
-    /// Focus a specific window — sets it as main, raises it, which triggers Space switch
-    private static func focusWindow(_ window: AXUIElement, appRef: AXUIElement) {
-        // Setting the window as main tells macOS to switch to its Space
+    private static func focusWindow(_ window: AXUIElement) {
         AXUIElementSetAttributeValue(window, kAXMainAttribute as CFString, true as CFTypeRef)
         AXUIElementSetAttributeValue(window, kAXFocusedAttribute as CFString, true as CFTypeRef)
         AXUIElementPerformAction(window, kAXRaiseAction as CFString)
