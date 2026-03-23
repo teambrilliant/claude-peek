@@ -1,7 +1,7 @@
 import Foundation
 import os.log
 
-private let logger = Logger(subsystem: "com.akurkin.claude-peek", category: "Sessions")
+private let logger = Logger(subsystem: "com.teambrilliant.claude-peek", category: "Sessions")
 
 @MainActor
 final class SessionManager: ObservableObject {

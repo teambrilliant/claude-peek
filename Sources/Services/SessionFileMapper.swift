@@ -1,7 +1,7 @@
 import Foundation
 import os.log
 
-private let logger = Logger(subsystem: "com.akurkin.claude-peek", category: "FileMapper")
+private let logger = Logger(subsystem: "com.teambrilliant.claude-peek", category: "FileMapper")
 
 enum SessionFileMapper {
     private static let projectsDir = FileManager.default.homeDirectoryForCurrentUser

@@ -1,7 +1,7 @@
 import Foundation
 import os.log
 
-private let logger = Logger(subsystem: "com.akurkin.claude-peek", category: "Socket")
+private let logger = Logger(subsystem: "com.teambrilliant.claude-peek", category: "Socket")
 
 struct PendingPermission: Sendable {
     let sessionId: String
@@ -15,7 +15,7 @@ final class SocketServer: Sendable {
     static let shared = SocketServer()
     static let socketPath = "/tmp/claude-peek.sock"
 
-    private let queue = DispatchQueue(label: "com.claude-peek.socket", qos: .userInitiated)
+    private let queue = DispatchQueue(label: "com.teambrilliant.claude-peek.socket", qos: .userInitiated)
 
     // nonisolated(unsafe) because all access is serialized on `queue`
     nonisolated(unsafe) private var serverSocket: Int32 = -1
