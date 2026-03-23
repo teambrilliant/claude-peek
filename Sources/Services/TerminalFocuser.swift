@@ -14,24 +14,71 @@ enum TerminalFocuser {
         "org.alacritty",
     ]
 
-    /// Focus the terminal app running a Claude session with the given PID
-    static func focusTerminal(claudePid: Int) {
-        // Walk parent chain to find the terminal app
+    /// Focus the terminal window running a Claude session
+    /// Uses project directory to match the correct window when multiple exist
+    static func focusTerminal(claudePid: Int, cwd: String) {
         guard let terminalPid = findTerminalPid(childPid: claudePid) else {
             logger.debug("No terminal app found for PID \(claudePid)")
             return
         }
 
-        // Find and activate the running application
         let apps = NSWorkspace.shared.runningApplications
         guard let app = apps.first(where: { $0.processIdentifier == terminalPid }) else {
             logger.debug("No running app for terminal PID \(terminalPid)")
             return
         }
 
+        // Try to raise the specific window matching the project directory
+        if AXIsProcessTrusted() {
+            raiseMatchingWindow(pid: terminalPid, cwd: cwd)
+        }
+
         app.activate()
         logger.info("Focused \(app.localizedName ?? "terminal", privacy: .public) for Claude PID \(claudePid)")
     }
+
+    /// Prompt for accessibility permission if not granted
+    static func requestAccessibilityIfNeeded() {
+        if !AXIsProcessTrusted() {
+            let options = [kAXTrustedCheckOptionPrompt.takeRetainedValue(): true] as CFDictionary
+            AXIsProcessTrustedWithOptions(options)
+        }
+    }
+
+    // MARK: - Window Matching
+
+    /// Find the window whose title contains the project directory name and raise it
+    private static func raiseMatchingWindow(pid: pid_t, cwd: String) {
+        let appRef = AXUIElementCreateApplication(pid)
+
+        var windowsRef: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(appRef, kAXWindowsAttribute as CFString, &windowsRef) == .success,
+            let windows = windowsRef as? [AXUIElement]
+        else { return }
+
+        // Match by project directory name in window title
+        let projectName = URL(fileURLWithPath: cwd).lastPathComponent
+
+        for window in windows {
+            var titleRef: CFTypeRef?
+            guard AXUIElementCopyAttributeValue(window, kAXTitleAttribute as CFString, &titleRef) == .success,
+                let title = titleRef as? String
+            else { continue }
+
+            if title.contains(projectName) {
+                AXUIElementPerformAction(window, kAXRaiseAction as CFString)
+                logger.debug("Raised window: \(title, privacy: .public)")
+                return
+            }
+        }
+
+        // No match — just raise the first window
+        if let firstWindow = windows.first {
+            AXUIElementPerformAction(firstWindow, kAXRaiseAction as CFString)
+        }
+    }
+
+    // MARK: - PID Walking
 
     private static func findTerminalPid(childPid: Int) -> pid_t? {
         var pid = childPid
@@ -40,7 +87,6 @@ enum TerminalFocuser {
             let parent = parentPid(of: pid)
             guard parent > 1 else { return nil }
 
-            // Check if this parent is a known terminal app
             if let app = NSWorkspace.shared.runningApplications.first(
                 where: { $0.processIdentifier == parent })
             {
