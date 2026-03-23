@@ -22,7 +22,20 @@ Built by [Team Brilliant](https://teambrilliant.com).
 - Python 3 (ships with macOS)
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) with hooks support
 
-### Build
+### Quick install
+
+```bash
+git clone https://github.com/teambrilliant/claude-peek.git
+cd claude-peek && ./install.sh
+```
+
+This builds the app, copies it to `/Applications`, configures Claude Code hooks in `~/.claude/settings.json` (merging with your existing hooks), and launches Claude Peek.
+
+### Manual install
+
+If you prefer to set things up yourself:
+
+1. **Build and install the app:**
 
 ```bash
 git clone https://github.com/teambrilliant/claude-peek.git
@@ -31,11 +44,7 @@ cd claude-peek
 cp -r ClaudePeek.app /Applications/
 ```
 
-### Configure hooks
-
-Add Claude Peek hooks to your `~/.claude/settings.json`. These let Claude Code send session events to the app.
-
-Merge into your existing `"hooks"` section (or create one):
+2. **Configure hooks** — add to your `~/.claude/settings.json`, merging into your existing `"hooks"` section:
 
 ```json
 {
@@ -77,7 +86,7 @@ Merge into your existing `"hooks"` section (or create one):
 
 Replace `/path/to/claude-peek` with the actual path to the cloned repo.
 
-### Run
+3. **Launch:**
 
 ```bash
 open /Applications/ClaudePeek.app
@@ -113,14 +122,15 @@ echo '{"session_id":"s1","cwd":"/tmp/project","event":"Stop","status":"waiting_f
 ```
 ├── Package.swift
 ├── Info.plist
+├── install.sh           # One-command install via claude -p
 ├── Sources/
-│   ├── App/            # Entry point, app delegate
-│   ├── Core/           # Models, geometry, view model, screen tracking
-│   ├── Services/       # Socket server, session manager, JSONL parser
-│   └── UI/             # SwiftUI views, window, conversation viewer
-├── hooks/              # Python hook script
-├── scripts/            # Build scripts
-└── thoughts/           # Shaped work, research docs
+│   ├── App/             # Entry point, app delegate
+│   ├── Core/            # Models, geometry, view model, screen tracking
+│   ├── Services/        # Socket server, session manager, JSONL parser
+│   └── UI/              # SwiftUI views, window, conversation viewer
+├── hooks/               # Python hook script
+├── mcp/                 # MCP server for Claude Peek
+└── scripts/             # Build scripts
 ```
 
 ## License
