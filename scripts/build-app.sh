@@ -18,6 +18,9 @@ mkdir -p "$APP_BUNDLE/Contents/MacOS"
 cp .build/release/ClaudePeek "$APP_BUNDLE/Contents/MacOS/$APP_NAME"
 cp Info.plist "$APP_BUNDLE/Contents/Info.plist"
 
+# Codesign so accessibility permission persists across rebuilds
+codesign --force --sign - "$APP_BUNDLE" 2>/dev/null || true
+
 echo "Built: $APP_BUNDLE"
 echo ""
 echo "To install:  cp -r $APP_BUNDLE /Applications/"

@@ -349,7 +349,6 @@ private struct SessionRow: View {
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
             } else if isHovered, let pid = session.pid {
                 Button {
-                    TerminalFocuser.requestAccessibilityIfNeeded()
                     TerminalFocuser.focusTerminal(claudePid: pid, cwd: session.cwd)
                 } label: {
                     Image(systemName: "terminal")

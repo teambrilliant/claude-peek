@@ -12,6 +12,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSApplication.shared.setActivationPolicy(.accessory)
 
         SessionManager.shared.startListening()
+        TerminalFocuser.requestAccessibilityIfNeeded()
         setupWindow()
 
         screenTracker.$activeScreen
