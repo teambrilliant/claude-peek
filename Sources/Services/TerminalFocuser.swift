@@ -21,12 +21,16 @@ enum TerminalFocuser {
         let apps = NSWorkspace.shared.runningApplications
         guard let app = apps.first(where: { $0.processIdentifier == terminalPid }) else { return }
 
-        // With accessibility permission, raise the specific window matching the project
         if AXIsProcessTrusted() {
+            // Raise the matching window — this triggers macOS Space switch
             raiseMatchingWindow(pid: terminalPid, cwd: cwd)
+            // Delay activate so the Space switch completes first
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                app.activate()
+            }
+        } else {
+            app.activate()
         }
-
-        app.activate()
     }
 
     /// Prompt for accessibility permission if not granted
@@ -67,9 +71,44 @@ enum TerminalFocuser {
     }
 
     private static func focusWindow(_ window: AXUIElement) {
+        // Set as main window — on some apps this triggers Space switch
         AXUIElementSetAttributeValue(window, kAXMainAttribute as CFString, true as CFTypeRef)
         AXUIElementSetAttributeValue(window, kAXFocusedAttribute as CFString, true as CFTypeRef)
         AXUIElementPerformAction(window, kAXRaiseAction as CFString)
+
+        // Get window title for AppleScript fallback
+        var titleRef: CFTypeRef?
+        AXUIElementCopyAttributeValue(window, kAXTitleAttribute as CFString, &titleRef)
+        if let title = titleRef as? String, !title.isEmpty {
+            raiseWindowViaAppleScript(windowTitle: title)
+        }
+    }
+
+    /// AppleScript can switch Spaces — AXRaise alone often can't
+    private static func raiseWindowViaAppleScript(windowTitle: String) {
+        let escaped = windowTitle.replacingOccurrences(of: "\"", with: "\\\"")
+        let script = """
+            tell application "System Events"
+                set targetWindow to missing value
+                repeat with proc in (every process whose background only is false)
+                    try
+                        repeat with w in (every window of proc)
+                            if name of w contains "\(escaped)" then
+                                set targetWindow to w
+                                perform action "AXRaise" of targetWindow
+                                set frontmost of proc to true
+                                return
+                            end if
+                        end repeat
+                    end try
+                end repeat
+            end tell
+            """
+
+        if let appleScript = NSAppleScript(source: script) {
+            var error: NSDictionary?
+            appleScript.executeAndReturnError(&error)
+        }
     }
 
     // MARK: - PID Walking
