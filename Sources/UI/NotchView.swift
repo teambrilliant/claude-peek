@@ -344,7 +344,10 @@ private struct SessionRow: View {
 
             Spacer(minLength: 0)
 
-            if isHovered, let pid = session.pid {
+            if session.phase.isWaitingForApproval {
+                approvalButtons
+                    .transition(.opacity.combined(with: .scale(scale: 0.9)))
+            } else if isHovered, let pid = session.pid {
                 Button {
                     TerminalFocuser.focusTerminal(claudePid: pid)
                 } label: {
@@ -357,11 +360,6 @@ private struct SessionRow: View {
                 }
                 .buttonStyle(.plain)
                 .transition(.opacity)
-            }
-
-            if session.phase.isWaitingForApproval {
-                approvalButtons
-                    .transition(.opacity.combined(with: .scale(scale: 0.9)))
             }
         }
         .padding(.leading, 8)
@@ -414,14 +412,16 @@ private struct SessionRow: View {
 
     @ViewBuilder
     private var approvalButtons: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 4) {
             Button {
                 SessionManager.shared.denyPermission(sessionId: session.sessionId, reason: nil)
             } label: {
                 Text("Deny")
+                    .lineLimit(1)
+                    .fixedSize()
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(.white.opacity(0.6))
-                    .padding(.horizontal, 10)
+                    .padding(.horizontal, 8)
                     .padding(.vertical, 5)
                     .background(Color.white.opacity(0.1))
                     .clipShape(Capsule())
@@ -432,9 +432,11 @@ private struct SessionRow: View {
                 SessionManager.shared.approvePermission(sessionId: session.sessionId)
             } label: {
                 Text("Allow")
+                    .lineLimit(1)
+                    .fixedSize()
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(.black)
-                    .padding(.horizontal, 10)
+                    .padding(.horizontal, 8)
                     .padding(.vertical, 5)
                     .background(Color.white.opacity(0.9))
                     .clipShape(Capsule())
@@ -445,9 +447,11 @@ private struct SessionRow: View {
                 SessionManager.shared.approvePermissionAlways(sessionId: session.sessionId)
             } label: {
                 Text("Always")
+                    .lineLimit(1)
+                    .fixedSize()
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(.black)
-                    .padding(.horizontal, 10)
+                    .padding(.horizontal, 8)
                     .padding(.vertical, 5)
                     .background(Color.green.opacity(0.85))
                     .clipShape(Capsule())
