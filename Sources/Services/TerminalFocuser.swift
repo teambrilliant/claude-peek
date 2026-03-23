@@ -11,25 +11,35 @@ enum TerminalFocuser {
         "org.alacritty",
     ]
 
+    /// IDE apps that understand "open directory" as "focus existing project window"
+    private static let ideApps: Set<String> = [
+        "dev.zed.Zed",
+        "com.microsoft.VSCode",
+        "com.jetbrains.intellij",
+    ]
+
     /// Focus the terminal running a Claude session.
-    /// Opens the project directory with the owning terminal app — macOS handles
-    /// the Space switch. IDE apps (Zed, VS Code) focus the existing project window.
     static func focusTerminal(claudePid: Int, cwd: String) {
         guard let terminalPid = findTerminalPid(childPid: claudePid) else { return }
 
         let apps = NSWorkspace.shared.runningApplications
-        guard let app = apps.first(where: { $0.processIdentifier == terminalPid }),
-            let bundleURL = app.bundleURL
-        else { return }
+        guard let app = apps.first(where: { $0.processIdentifier == terminalPid }) else { return }
 
-        let config = NSWorkspace.OpenConfiguration()
-        config.activates = true
+        let isIDE = app.bundleIdentifier.map { ideApps.contains($0) } ?? false
 
-        NSWorkspace.shared.open(
-            [URL(fileURLWithPath: cwd)],
-            withApplicationAt: bundleURL,
-            configuration: config
-        )
+        if isIDE, let bundleURL = app.bundleURL {
+            // IDE apps: open cwd to focus the correct project window across Spaces
+            let config = NSWorkspace.OpenConfiguration()
+            config.activates = true
+            NSWorkspace.shared.open(
+                [URL(fileURLWithPath: cwd)],
+                withApplicationAt: bundleURL,
+                configuration: config
+            )
+        } else {
+            // Plain terminals: just activate — opening cwd would spawn a new window
+            app.activate()
+        }
     }
 
     // MARK: - PID Walking
