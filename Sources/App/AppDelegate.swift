@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import ServiceManagement
 import SwiftUI
 
 @MainActor
@@ -10,6 +11,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApplication.shared.setActivationPolicy(.accessory)
+        enableLaunchAtLogin()
 
         SessionManager.shared.startListening()
         setupWindow()
@@ -33,6 +35,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func screenDidChange() {
         screenTracker.revalidate()
         windowController?.relocate(to: screenTracker.activeScreen)
+    }
+
+    private func enableLaunchAtLogin() {
+        let service = SMAppService.mainApp
+        if service.status != .enabled {
+            try? service.register()
+        }
     }
 
     private func setupWindow() {
