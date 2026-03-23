@@ -66,7 +66,7 @@ enum TerminalFocuser {
             else { continue }
 
             if title.contains(projectName) {
-                AXUIElementPerformAction(window, kAXRaiseAction as CFString)
+                focusWindow(window, appRef: appRef)
                 logger.debug("Raised window: \(title, privacy: .public)")
                 return
             }
@@ -74,8 +74,16 @@ enum TerminalFocuser {
 
         // No match — just raise the first window
         if let firstWindow = windows.first {
-            AXUIElementPerformAction(firstWindow, kAXRaiseAction as CFString)
+            focusWindow(firstWindow, appRef: appRef)
         }
+    }
+
+    /// Focus a specific window — sets it as main, raises it, which triggers Space switch
+    private static func focusWindow(_ window: AXUIElement, appRef: AXUIElement) {
+        // Setting the window as main tells macOS to switch to its Space
+        AXUIElementSetAttributeValue(window, kAXMainAttribute as CFString, true as CFTypeRef)
+        AXUIElementSetAttributeValue(window, kAXFocusedAttribute as CFString, true as CFTypeRef)
+        AXUIElementPerformAction(window, kAXRaiseAction as CFString)
     }
 
     // MARK: - PID Walking
