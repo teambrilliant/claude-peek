@@ -196,10 +196,24 @@ final class ConversationParser {
                 if let id = block["id"] as? String,
                     let name = block["name"] as? String
                 {
-                    let inputSummary = summarizeToolInput(
-                        name: name, input: block["input"] as? [String: Any])
-                    content.append(.toolUse(ToolCallInfo(
-                        id: id, name: name, inputSummary: inputSummary)))
+                    // Show claude-peek reply as normal text, not a tool call
+                    if name == "mcp__claude-peek__reply",
+                        let input = block["input"] as? [String: Any],
+                        let text = input["text"] as? String, !text.isEmpty
+                    {
+                        content.append(.text(text))
+                    } else if name == "ToolSearch",
+                        let input = block["input"] as? [String: Any],
+                        let query = input["query"] as? String,
+                        query.contains("claude-peek")
+                    {
+                        // Hide ToolSearch for claude-peek tools
+                    } else {
+                        let inputSummary = summarizeToolInput(
+                            name: name, input: block["input"] as? [String: Any])
+                        content.append(.toolUse(ToolCallInfo(
+                            id: id, name: name, inputSummary: inputSummary)))
+                    }
                 }
             case "thinking":
                 if let thinking = block["thinking"] as? String, !thinking.isEmpty {
