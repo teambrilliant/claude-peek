@@ -79,6 +79,12 @@ final class SessionManager: ObservableObject {
     // MARK: - Event Processing
 
     private func processEvent(_ event: HookEvent) {
+        // Handle channel registration (MCP server announcing its port)
+        if event.event == "ChannelRegistration", let port = event.port {
+            ChannelClient.shared.registerPort(port, cwd: event.cwd)
+            return
+        }
+
         let sessionId = event.sessionId
         let targetPhase = event.determinePhase()
 

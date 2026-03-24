@@ -2,12 +2,10 @@
 /**
  * Claude Peek MCP Channel Server
  *
- * Two-way channel:
- * 1. HTTP endpoint receives messages from Claude Peek app
- * 2. Pushes them into Claude Code via MCP channel notification
- * 3. Claude responds via the `reply` tool → forwarded back to the app
+ * Each Claude Code session spawns its own instance.
+ * Binds to a random port, registers with Claude Peek app via socket.
  *
- * Test: curl -X POST localhost:7778 -d '{"text":"hello from peek"}'
+ * Test: curl -X POST localhost:<port> -d '{"text":"hello"}'
  */
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -16,8 +14,9 @@ import {
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { connect } from "net";
 
-const PORT = Number(process.env.CLAUDE_PEEK_MCP_PORT ?? 7778);
+const SOCKET_PATH = "/tmp/claude-peek.sock";
 
 const mcp = new Server(
   { name: "claude-peek", version: "0.1.0" },
@@ -34,7 +33,6 @@ const mcp = new Server(
   }
 );
 
-// Tool: reply — Claude calls this to send responses back to Peek
 mcp.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
     {
@@ -55,7 +53,6 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
   if (req.params.name === "reply") {
     const text = (req.params.arguments as Record<string, string>)?.text ?? "";
     console.error(`[claude-peek] Reply: ${text.slice(0, 200)}`);
-    // TODO: forward to Claude Peek app via socket
     return { content: [{ type: "text" as const, text: "sent" }] };
   }
   return {
@@ -66,14 +63,13 @@ mcp.setRequestHandler(CallToolRequestSchema, async (req) => {
   };
 });
 
-// Connect MCP via stdio
 const transport = new StdioServerTransport();
 await mcp.connect(transport);
 console.error(`[claude-peek] MCP channel server connected`);
 
-// HTTP endpoint for receiving messages from Claude Peek app
-Bun.serve({
-  port: PORT,
+// Bind to port 0 — OS assigns a free port
+const httpServer = Bun.serve({
+  port: 0,
   hostname: "127.0.0.1",
   async fetch(req) {
     if (req.method !== "POST") {
@@ -112,4 +108,31 @@ Bun.serve({
   },
 });
 
-console.error(`[claude-peek] HTTP listening on http://127.0.0.1:${PORT}`);
+const actualPort = httpServer.port;
+console.error(`[claude-peek] HTTP listening on http://127.0.0.1:${actualPort}`);
+
+// Register this channel's port with Claude Peek app via the hook socket
+function registerPort() {
+  try {
+    const client = connect(SOCKET_PATH, () => {
+      const registration = JSON.stringify({
+        event: "ChannelRegistration",
+        port: actualPort,
+        pid: process.ppid,
+        session_id: "unknown",
+        cwd: process.cwd(),
+        status: "channel_ready",
+      });
+      client.write(registration);
+      client.end();
+      console.error(`[claude-peek] Registered port ${actualPort} with Claude Peek`);
+    });
+    client.on("error", () => {
+      console.error(`[claude-peek] Could not register with Claude Peek (socket not available)`);
+    });
+  } catch {
+    console.error(`[claude-peek] Registration failed`);
+  }
+}
+
+registerPort();

@@ -7,8 +7,12 @@ struct ConversationView: View {
     @State private var replyText = ""
     @State private var isSending = false
 
+    private var channelAvailable: Bool {
+        channel.isAvailable(cwd: session.cwd)
+    }
+
     private var canReply: Bool {
-        channel.isAvailable && session.phase == .waitingForInput && !isSending
+        channelAvailable && session.phase == .waitingForInput && !isSending
     }
 
     var body: some View {
@@ -61,8 +65,8 @@ struct ConversationView: View {
                 }
             }
 
-            // Reply input — only when channel is available
-            if channel.isAvailable {
+            // Reply input — only when channel is available for this session
+            if channelAvailable {
                 Divider()
                     .background(Color.white.opacity(0.1))
 
@@ -114,7 +118,7 @@ struct ConversationView: View {
         isSending = true
 
         Task {
-            _ = await ChannelClient.shared.sendReply(text: text, sessionId: session.sessionId)
+            _ = await ChannelClient.shared.sendReply(text: text, sessionId: session.sessionId, cwd: session.cwd)
             isSending = false
         }
     }

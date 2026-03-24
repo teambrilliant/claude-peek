@@ -220,7 +220,8 @@ final class SocketServer: Sendable {
                 toolInput: event.toolInput,
                 toolUseId: toolUseId,
                 notificationType: event.notificationType,
-                message: event.message
+                message: event.message,
+                port: event.port
             )
 
             let pending = PendingPermission(
