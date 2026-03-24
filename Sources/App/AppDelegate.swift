@@ -14,6 +14,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         enableLaunchAtLogin()
 
         SessionManager.shared.startListening()
+        ChannelClient.shared.startMonitoring()
         setupWindow()
 
         screenTracker.$activeScreen

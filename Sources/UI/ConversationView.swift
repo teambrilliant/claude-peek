@@ -3,6 +3,13 @@ import SwiftUI
 struct ConversationView: View {
     let session: SessionState
     @StateObject private var loader = ConversationLoader()
+    @ObservedObject private var channel = ChannelClient.shared
+    @State private var replyText = ""
+    @State private var isSending = false
+
+    private var canReply: Bool {
+        channel.isAvailable && session.phase == .waitingForInput && !isSending
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -53,10 +60,63 @@ struct ConversationView: View {
                     }
                 }
             }
+
+            // Reply input — only when channel is available
+            if channel.isAvailable {
+                Divider()
+                    .background(Color.white.opacity(0.1))
+
+                replyInput
+            }
         }
         .onAppear { loader.load(session: session) }
         .onChange(of: session.sessionId) { _, _ in loader.load(session: session) }
         .onDisappear { loader.stop() }
+    }
+
+    // MARK: - Reply Input
+
+    @ViewBuilder
+    private var replyInput: some View {
+        HStack(spacing: 8) {
+            TextField("Reply...", text: $replyText)
+                .textFieldStyle(.plain)
+                .font(.system(size: 12))
+                .foregroundColor(.white)
+                .disabled(!canReply)
+                .onSubmit { sendReply() }
+
+            if isSending {
+                ProgressView()
+                    .controlSize(.small)
+            } else {
+                Button {
+                    sendReply()
+                } label: {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(canReply && !replyText.isEmpty ? .white : .white.opacity(0.2))
+                }
+                .buttonStyle(.plain)
+                .disabled(!canReply || replyText.isEmpty)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .opacity(canReply ? 1 : 0.5)
+    }
+
+    private func sendReply() {
+        let text = replyText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty, canReply else { return }
+
+        replyText = ""
+        isSending = true
+
+        Task {
+            _ = await ChannelClient.shared.sendReply(text: text, sessionId: session.sessionId)
+            isSending = false
+        }
     }
 
     @ViewBuilder
