@@ -119,8 +119,12 @@ final class NotchViewModel: ObservableObject {
             .map { sessions in sessions.values.contains { $0.phase.isWaitingForApproval } }
             .removeDuplicates()
             .sink { [weak self] hasPending in
-                guard let self, hasPending, self.status == .closed else { return }
-                self.notchOpen(reason: .notification)
+                guard let self else { return }
+                if hasPending && self.status == .closed {
+                    self.notchOpen(reason: .notification)
+                } else if !hasPending && self.status == .opened && self.openReason == .notification {
+                    self.notchClose()
+                }
             }
             .store(in: &cancellables)
     }
