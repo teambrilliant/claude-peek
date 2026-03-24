@@ -18,13 +18,18 @@ struct ConversationView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Header
-            HStack {
+            HStack(spacing: 6) {
                 Text(session.title)
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.white)
                     .lineLimit(1)
                 Spacer()
-                phaseTag
+
+                if session.phase.isWaitingForApproval {
+                    approvalButtons
+                } else {
+                    phaseTag
+                }
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
@@ -133,6 +138,38 @@ struct ConversationView: View {
             .padding(.vertical, 2)
             .background(color.opacity(0.15))
             .clipShape(Capsule())
+    }
+
+    @ViewBuilder
+    private var approvalButtons: some View {
+        HStack(spacing: 4) {
+            Button { SessionManager.shared.denyPermission(sessionId: session.sessionId, reason: nil) } label: {
+                Text("Deny").lineLimit(1).fixedSize()
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.white.opacity(0.6))
+                    .padding(.horizontal, 8).padding(.vertical, 4)
+                    .background(Color.white.opacity(0.1))
+                    .clipShape(Capsule())
+            }.buttonStyle(.plain)
+
+            Button { SessionManager.shared.approvePermission(sessionId: session.sessionId) } label: {
+                Text("Allow").lineLimit(1).fixedSize()
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 8).padding(.vertical, 4)
+                    .background(Color.white.opacity(0.9))
+                    .clipShape(Capsule())
+            }.buttonStyle(.plain)
+
+            Button { SessionManager.shared.approvePermissionAlways(sessionId: session.sessionId) } label: {
+                Text("Always").lineLimit(1).fixedSize()
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 8).padding(.vertical, 4)
+                    .background(Color.green.opacity(0.85))
+                    .clipShape(Capsule())
+            }.buttonStyle(.plain)
+        }
     }
 
     private func phaseInfo(_ phase: SessionPhase) -> (String, Color) {

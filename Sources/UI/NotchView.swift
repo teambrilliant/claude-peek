@@ -259,6 +259,7 @@ struct NotchView: View {
                         SessionRow(
                             session: session,
                             isSelected: viewModel.selectedSessionId == session.sessionId,
+                            isCompact: viewModel.selectedSessionId != nil,
                             onSelect: { viewModel.selectSession(session.sessionId) }
                         )
                         .id(session.id)
@@ -304,6 +305,7 @@ struct NotchView: View {
 private struct SessionRow: View {
     let session: SessionState
     let isSelected: Bool
+    let isCompact: Bool
     let onSelect: () -> Void
     @State private var isHovered = false
     @State private var spinnerPhase = 0
@@ -344,10 +346,10 @@ private struct SessionRow: View {
 
             Spacer(minLength: 0)
 
-            if session.phase.isWaitingForApproval {
+            if session.phase.isWaitingForApproval && !isCompact {
                 approvalButtons
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
-            } else if isHovered, let pid = session.pid {
+            } else if isHovered && !isCompact, let pid = session.pid {
                 Button {
                     TerminalFocuser.focusTerminal(claudePid: pid, cwd: session.cwd)
                 } label: {
