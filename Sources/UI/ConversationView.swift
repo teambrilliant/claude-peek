@@ -26,6 +26,19 @@ struct ConversationView: View {
                 Spacer()
 
                 if session.phase.isWaitingForApproval {
+                    if let pid = session.pid {
+                        Button {
+                            TerminalFocuser.focusTerminal(claudePid: pid, cwd: session.cwd)
+                        } label: {
+                            Image(systemName: "terminal")
+                                .font(.system(size: 10))
+                                .foregroundColor(.white.opacity(0.4))
+                                .frame(width: 22, height: 22)
+                                .background(Color.white.opacity(0.08))
+                                .clipShape(RoundedRectangle(cornerRadius: 5))
+                        }
+                        .buttonStyle(.plain)
+                    }
                     approvalButtons
                 } else {
                     phaseTag
