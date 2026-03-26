@@ -15,9 +15,11 @@ swift build -c release 2>&1
 echo "Creating app bundle..."
 rm -rf "$APP_BUNDLE"
 mkdir -p "$APP_BUNDLE/Contents/MacOS"
+mkdir -p "$APP_BUNDLE/Contents/Resources"
 
 cp .build/release/ClaudePeek "$APP_BUNDLE/Contents/MacOS/$APP_NAME"
 cp Info.plist "$APP_BUNDLE/Contents/Info.plist"
+cp claude-peek.icns "$APP_BUNDLE/Contents/Resources/claude-peek.icns"
 
 # Codesign so accessibility permission persists across rebuilds
 codesign --force --sign - "$APP_BUNDLE" 2>/dev/null || true

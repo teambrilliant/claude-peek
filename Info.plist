@@ -12,6 +12,8 @@
     <string>1</string>
     <key>CFBundleShortVersionString</key>
     <string>0.1.0</string>
+    <key>CFBundleIconFile</key>
+    <string>claude-peek</string>
     <key>LSUIElement</key>
     <true/>
 </dict>
