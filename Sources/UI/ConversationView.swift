@@ -24,25 +24,7 @@ struct ConversationView: View {
                     .foregroundColor(.white)
                     .lineLimit(1)
                 Spacer()
-
-                if session.phase.isWaitingForApproval {
-                    if let pid = session.pid {
-                        Button {
-                            TerminalFocuser.focusTerminal(claudePid: pid, cwd: session.cwd)
-                        } label: {
-                            Image(systemName: "terminal")
-                                .font(.system(size: 10))
-                                .foregroundColor(.white.opacity(0.4))
-                                .frame(width: 22, height: 22)
-                                .background(Color.white.opacity(0.08))
-                                .clipShape(RoundedRectangle(cornerRadius: 5))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    approvalButtons
-                } else {
-                    phaseTag
-                }
+                phaseTag
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
@@ -83,8 +65,13 @@ struct ConversationView: View {
                 }
             }
 
+            // Approval card — pinned at bottom when waiting for approval
+            if let permission = session.activePermission {
+                approvalCard(permission: permission)
+            }
+
             // Reply input — only when channel is available for this session
-            if channelAvailable {
+            if channelAvailable && !session.phase.isWaitingForApproval {
                 Divider()
                     .background(Color.white.opacity(0.1))
 
@@ -151,6 +138,66 @@ struct ConversationView: View {
             .padding(.vertical, 2)
             .background(color.opacity(0.15))
             .clipShape(Capsule())
+    }
+
+    @ViewBuilder
+    private func approvalCard(permission: PermissionContext) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // Tool name
+            HStack(spacing: 6) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 11))
+                    .foregroundColor(Color(red: 0.95, green: 0.68, blue: 0.0))
+
+                Text(permission.toolName)
+                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                    .foregroundColor(.white)
+            }
+
+            // Tool input details
+            if let input = permission.formattedInput, !input.isEmpty {
+                Text(input)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundColor(.white.opacity(0.7))
+                    .lineLimit(5)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(8)
+                    .background(Color.white.opacity(0.05))
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+            }
+
+            // Action buttons
+            HStack(spacing: 6) {
+                if let pid = session.pid {
+                    Button {
+                        TerminalFocuser.focusTerminal(claudePid: pid, cwd: session.cwd)
+                    } label: {
+                        Image(systemName: "terminal")
+                            .font(.system(size: 10))
+                            .foregroundColor(.white.opacity(0.4))
+                            .frame(width: 22, height: 22)
+                            .background(Color.white.opacity(0.08))
+                            .clipShape(RoundedRectangle(cornerRadius: 5))
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                Spacer()
+
+                approvalButtons
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color(red: 0.95, green: 0.68, blue: 0.0).opacity(0.08))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .strokeBorder(Color(red: 0.95, green: 0.68, blue: 0.0).opacity(0.2), lineWidth: 1)
+                )
+        )
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
     }
 
     @ViewBuilder
