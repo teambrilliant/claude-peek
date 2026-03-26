@@ -1,5 +1,6 @@
 .build/
 ClaudePeek.app
+ClaudePeek.zip
 .swiftpm/
 thoughts/
 .DS_Store
