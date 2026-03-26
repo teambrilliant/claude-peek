@@ -122,7 +122,7 @@ final class NotchViewModel: ObservableObject {
                 guard let self else { return }
                 if hasPending && self.status == .closed {
                     self.notchOpen(reason: .notification)
-                } else if !hasPending && self.status == .opened && self.openReason == .notification {
+                } else if !hasPending && self.status == .opened && self.selectedSessionId == nil {
                     self.notchClose()
                 }
             }
