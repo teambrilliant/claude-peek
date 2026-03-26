@@ -22,11 +22,20 @@ Built by [Team Brilliant](https://teambrilliant.com).
 
 ### Requirements
 
-- macOS 14+
+- macOS 14+ (Apple Silicon)
 - Python 3 (ships with macOS)
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) with hooks support
 
-### Quick install
+### Download (recommended)
+
+1. Download `ClaudePeek.zip` from the [latest release](https://github.com/teambrilliant/claude-peek/releases/latest)
+2. Unzip and move `ClaudePeek.app` to `/Applications`
+3. Configure hooks (see below)
+4. Open `/Applications/ClaudePeek.app`
+
+The app is signed and notarized — no Gatekeeper warnings.
+
+### Build from source
 
 ```bash
 git clone https://github.com/teambrilliant/claude-peek.git
@@ -35,19 +44,9 @@ cd claude-peek && ./install.sh
 
 This builds the app, copies it to `/Applications`, configures Claude Code hooks in `~/.claude/settings.json` (merging with your existing hooks), and launches Claude Peek.
 
-### Manual install
+### Hook configuration
 
-If you prefer to set things up yourself:
-
-1. **Build and install the app:**
-
-```bash
-git clone https://github.com/teambrilliant/claude-peek.git
-cd claude-peek
-./scripts/build-app.sh
-```
-
-2. **Configure hooks** — add to your `~/.claude/settings.json`, merging into your existing `"hooks"` section:
+If you used `install.sh`, hooks are configured automatically. Otherwise, add to your `~/.claude/settings.json`, merging into your existing `"hooks"` section:
 
 ```json
 {
@@ -87,9 +86,9 @@ cd claude-peek
 }
 ```
 
-Replace `/path/to/claude-peek` with the actual path to the cloned repo.
+Replace `/path/to/claude-peek` with the actual path to the cloned repo (or wherever you placed the hooks directory).
 
-3. **Launch:**
+### Launch
 
 ```bash
 open /Applications/ClaudePeek.app
@@ -97,7 +96,11 @@ open /Applications/ClaudePeek.app
 
 To quit: `pkill ClaudePeek`
 
-To update: `cd claude-peek && git pull && ./scripts/build-app.sh && killall ClaudePeek; open /Applications/ClaudePeek.app`
+### Update
+
+**Pre-built:** download the latest release and replace the app in `/Applications`.
+
+**From source:** `cd claude-peek && git pull && ./install.sh`
 
 ## Experimental: Reply from Peek
 
@@ -187,7 +190,27 @@ echo '{"session_id":"s1","cwd":"/tmp/project","event":"Stop","status":"waiting_f
 │   └── UI/              # SwiftUI views, window, conversation viewer
 ├── hooks/               # Python hook script
 ├── mcp/                 # MCP channel server (Bun/TypeScript) for reply feature
-└── scripts/             # Build scripts
+└── scripts/
+    ├── build-app.sh     # Dev build (ad-hoc signed)
+    └── release.sh       # Release build (signed + notarized)
+```
+
+## Releasing
+
+Requires Apple Developer ID certificate and App Store Connect API key.
+
+```bash
+export NOTARY_KEY_ID="..."
+export NOTARY_KEY_PATH="path/to/AuthKey.p8"
+export NOTARY_ISSUER_ID="..."
+
+# Build, sign, notarize, staple
+./scripts/release.sh
+
+# Tag and publish
+git tag v0.x.0
+git push origin main --tags
+gh release create v0.x.0 ClaudePeek.zip --title "v0.x.0" --generate-notes
 ```
 
 ## License
